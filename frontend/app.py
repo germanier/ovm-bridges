@@ -1,8 +1,13 @@
 import streamlit as st
 import pandas as pd
 
+import streamlit as st
+import pandas as pd
 
-st.title("Volume from L2 to L1 dashboard")
+csv_file = 'data/base/base_deposits.csv'
+data = pd.read_csv(csv_file)
+
+st.title("Volume dashboard")
 
 st.write("")
 st.divider()
@@ -27,7 +32,6 @@ with col2:
     st.write("")
     st.divider()
     st.write("")
-
 
 # SUMMAY SECTION
 st.subheader('Counters')
@@ -56,5 +60,32 @@ with col4:
 st.write("")
 st.divider() # decide if u want this one or each one below every column
 st.write("")
+
+# VISUALIZATION SECTION
+st.subheader('Visualization')
+col1, col2 = st.columns(2)
+
+try:
+    with col1:
+        st.write(f'**here goes piechart**\n\n{''}')
+
+    with col2:
+        if 'block_timestamp' in data.columns and 'msg_value' in data.columns:
+            data['block_timestamp'] = pd.to_datetime(data['block_timestamp'], errors='coerce')
+
+            # con
+            data['msg_value_normalized'] = data['msg_value']/1e18
+
+            # Group by day and aggregate the 'msg_value' column
+            daily_aggregate = data.groupby(pd.Grouper(key='block_timestamp', freq='W')).sum().reset_index()
+
+        if 'msg_value' in data.columns and 'block_timestamp' in data.columns:
+            st.line_chart(daily_aggregate.set_index('block_timestamp')['msg_value_normalized'])
+            print(daily_aggregate.head())
+        else:
+            st.write('Columns "block_number_started" and "block_timestamp" not found in the CSV.')
+
+except FileNotFoundError:
+    st.error(f'The file {csv_file} was not found. Please make sure the file exists in the specified location.')
 
 
