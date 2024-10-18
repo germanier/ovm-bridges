@@ -1,11 +1,76 @@
 import streamlit as st
 import pandas as pd
 
-import streamlit as st
-import pandas as pd
 
-csv_file = 'data/base/base_deposits.csv'
-data = pd.read_csv(csv_file)
+data_withdraw = {
+    'block_number_started': [2916157, 2916189, 2916199, 2916284],
+    'block_timestamp_started': [
+        '2023-08-21 12:41:01',
+        '2023-08-21 12:42:05',
+        '2023-08-21 12:42:25',
+        '2023-08-21 12:45:15'
+    ],
+    'transaction_hash_started': [
+        '0x32a62eae09bed91025343fa39c0466ba1ee92cb894cb6dad68573a291cf54994',
+        '0xf83863a1257e58c7bc485bae8e78ceb7c5eb20071b6c6509cba3bd9c242e79cb',
+        '0x3901fa18a44b42b65469280ee61fa7f47cafbd996b286852764f679a25c9536a',
+        '0x82f6f31771e7572fa4a9562290a63c886af531f4c6c1381e288ccbb84e52c557'
+    ],
+    'event_started': ['SentMessage'] * 4,
+    'signature_started': [
+        'MessagePassed(uint256,address,address,uint256,uint256,bytes,bytes3,1766847064778384329583297500742918515827483896875618958121606201292634470',
+        'MessagePassed(uint256,address,address,uint256,uint256,bytes,bytes3,1766847064778384329583297500742918515827483896875618958121606201292634471',
+        'MessagePassed(uint256,address,address,uint256,uint256,bytes,bytes3,1766847064778384329583297500742918515827483896875618958121606201292634472',
+        'MessagePassed(uint256,address,address,uint256,uint256,bytes,bytes3,1766847064778384329583297500742918515827483896875618958121606201292634473'
+    ],
+    'nonce': [None] * 4,
+    'sender': [
+        '0xe35e388f10bc1f43506603a2ac9bf168ab5c6c09',
+        '0x676fb89b3c64db5853046dc66eae6312de558dc6',
+        '0x594a1a7e8d5c39a92218980bbd62db5fe099d9d9',
+        '0xe7802d58698e0f69219b82e140208fc2108fbfbb'
+    ],
+    'target': [
+        '0xe35e388f10bc1f43506603a2ac9bf168ab5c6c09',
+        '0x676fb89b3c64db5853046dc66eae6312de558dc6',
+        '0x594a1a7e8d5c39a92218980bbd62db5fe099d9d9',
+        '0xe7802d58698e0f69219b82e140208fc2108fbfbb'
+    ],
+    'value': [
+        10000000000000000,
+        68310000000000000,
+        73458000000000000,
+        25000000000000000
+    ],
+    'withdrawal_hash': [
+        '0x9a60475be6c63dcff09cb7cb28be8555b9376768f362bf5ec7473302cd579895',
+        '0x1c5b7f9c25a0f4dad4fcd4c7e4a42d6bd46a601152955af9ef18506bae10a584',
+        '0xb4e1a41906721c526f1330c157e6ca9d1c14cfab5dc18d71d7db43b1fb3a38a0',
+        '0x4506dbfd8611ac4f4eb94f72c51cae5dd03b49ffe11b9974cf2cf12c04c004c0'
+    ],
+    'block_number_proven': [None] * 4,
+    'block_timestamp_proven': [None] * 4,
+    'transaction_hash_proven': [None] * 4,
+    'method_id': [None] * 4,
+    'event_proven': [None] * 4,
+    'signature_proven': [None] * 4,
+    'block_number': [None] * 4,
+    'block_timestamp': [None] * 4,
+    'transaction_hash': [None] * 4,
+    'method_id_finalized': [None] * 4,
+    'event': [None] * 4,
+    'signature': [None] * 4
+}
+
+data_withdraw = pd.DataFrame(data_withdraw)
+data_withdraw['block_timestamp'] = pd.to_datetime(data_withdraw['block_timestamp'], errors='coerce')
+data_withdraw['value_normalized'] = data_withdraw['value']/1e18
+
+csv_deposit = 'data/base/base_deposits.csv'
+data_deposit = pd.read_csv(csv_deposit)
+data_deposit['block_timestamp'] = pd.to_datetime(data_deposit['block_timestamp'], errors='coerce')
+data_deposit['msg_value_normalized'] = data_deposit['msg_value']/1e18
+
 
 st.title("Volume dashboard")
 
@@ -37,22 +102,24 @@ with col2:
 st.subheader('Counters')
 col1, col2, col3, col4 = st.columns(4) # overrides
 with col1:
-    st.write(f'**Volume in**\n\n{'fake value Ξ'}')
+    st.write(f'**Volume in**\n\n{data_deposit['msg_value_normalized'].sum():,.2f} Ξ')
     st.write("")
     st.divider()
     st.write("")
 with col2:
-    st.write(f'**Volume out**\n\n{'fake value Ξ'}')
+    st.write(f'**Volume out**\n\n{data_withdraw['value_normalized'].sum():,.2f} Ξ')
     st.write("")
     st.divider()
     st.write("")
 with col3:
-    st.write(f'**Volume to prove**\n\n{'fake value Ξ'}')
+    st.write(f'**Volume to prove**\n\n{'how do I compute it?'}')
     st.write("")
     st.divider()
     st.write("")
 with col4:
-    st.write(f'**Volume to withdraw**\n\n{'fake value Ξ'}')
+    st.write(f'**Volume to withdraw**\n\n{(
+        data_deposit['msg_value_normalized'].sum() -
+        data_withdraw['value_normalized'].sum()):,.2f}')
     st.write("")
     st.divider()
     st.write("")
@@ -63,29 +130,16 @@ st.write("")
 
 # VISUALIZATION SECTION
 st.subheader('Visualization')
-col1, col2 = st.columns(2)
 
-try:
-    with col1:
-        st.write(f'**here goes piechart**\n\n{''}')
+daily_aggregate_deposit = data_deposit.copy()
+data_deposit['daily_count'] = daily_aggregate_deposit.groupby('block_timestamp').transform('size')
+daily_aggregate_deposit = data_deposit.groupby(pd.Grouper(key='block_timestamp', freq='D')).sum().reset_index()
+daily_aggregate_deposit = daily_aggregate_deposit[['block_timestamp', 'msg_value_normalized', 'daily_count']]
+#last_365_days = pd.Timestamp.now().normalize() - pd.DateOffset(days=365)
+#filtered_df = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_365_days]
+st.line_chart(daily_aggregate_deposit.set_index('block_timestamp')[['msg_value_normalized', 'daily_count']])
 
-    with col2:
-        if 'block_timestamp' in data.columns and 'msg_value' in data.columns:
-            data['block_timestamp'] = pd.to_datetime(data['block_timestamp'], errors='coerce')
-
-            # con
-            data['msg_value_normalized'] = data['msg_value']/1e18
-
-            # Group by day and aggregate the 'msg_value' column
-            daily_aggregate = data.groupby(pd.Grouper(key='block_timestamp', freq='W')).sum().reset_index()
-
-        if 'msg_value' in data.columns and 'block_timestamp' in data.columns:
-            st.line_chart(daily_aggregate.set_index('block_timestamp')['msg_value_normalized'])
-            print(daily_aggregate.head())
-        else:
-            st.write('Columns "block_number_started" and "block_timestamp" not found in the CSV.')
-
-except FileNotFoundError:
-    st.error(f'The file {csv_file} was not found. Please make sure the file exists in the specified location.')
-
+weekly_aggregate_deposit = daily_aggregate_deposit.groupby(pd.Grouper(key='block_timestamp', freq='W')).sum().reset_index()
+print(daily_aggregate_deposit)
+print(weekly_aggregate_deposit)
 
