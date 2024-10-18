@@ -61,8 +61,11 @@ data_withdraw = {
     'event': [None] * 4,
     'signature': [None] * 4
 }
+csv_withdrawal = 'data/base/base_withdrawals.csv'
+data_withdraw = pd.read_csv(csv_withdrawal)
+#data_withdraw = pd.DataFrame(data_withdraw)
 
-data_withdraw = pd.DataFrame(data_withdraw)
+data_withdraw['value'] = pd.to_numeric(data_withdraw['value'], errors='coerce')
 data_withdraw['block_timestamp'] = pd.to_datetime(data_withdraw['block_timestamp'], errors='coerce')
 data_withdraw['value_normalized'] = data_withdraw['value']/1e18
 
@@ -139,7 +142,15 @@ daily_aggregate_deposit = daily_aggregate_deposit[['block_timestamp', 'msg_value
 #filtered_df = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_365_days]
 st.line_chart(daily_aggregate_deposit.set_index('block_timestamp')[['msg_value_normalized', 'daily_count']])
 
-weekly_aggregate_deposit = daily_aggregate_deposit.groupby(pd.Grouper(key='block_timestamp', freq='W')).sum().reset_index()
-print(daily_aggregate_deposit)
-print(weekly_aggregate_deposit)
-
+col1, col2 = st.columns(2)
+# First input box in the first column
+with col1:
+    last_7_days = pd.Timestamp.now().normalize() - pd.DateOffset(days=30) # set as 7 pliz
+    deposit_last7days = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_7_days]
+    st.write(f'**Bridgers last 7 days**\n\n{deposit_last7days['daily_count'].sum():,.2f}')
+    st.write(f'**TVB last 7 days**\n\n{deposit_last7days['msg_value_normalized'].sum():,.2f} Ξ')
+with col2:
+    last_year = pd.Timestamp.now().normalize() - pd.DateOffset(days=365) # set as 7 pliz
+    deposit_lastyear = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_year]
+    st.write(f'**Bridgers last year**\n\n{deposit_lastyear['daily_count'].sum():,.2f}')
+    st.write(f'**TVB last year**\n\n{deposit_lastyear['msg_value_normalized'].sum():,.2f} Ξ')
