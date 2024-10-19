@@ -8,8 +8,8 @@ THIRD_WEB_SECRET_KEY = '3dcd8b35413c144b8f25805a1179db22'
 
 # IMPORT AND PREPARE DATA
 data_withdraw = pd.read_csv('data/base/basic_withdrawals.csv')
-data_deposit = pd.read_csv('data/base/basic_deposits.csv')
-data_counters = pd.read_csv('data/base/counters.csv')
+data_deposit = pd.read_csv('data/base//basic_deposits.csv')
+data_counters = pd.read_csv('data/base//counters.csv')
 data_daily = pd.read_csv('data/base/daily_volumes.csv')
 data_forgotten = pd.read_csv('data/base/forgotten_funds.csv')
 
@@ -18,6 +18,7 @@ st.title("Volume dashboard")
 st.write("")
 st.divider()
 st.write("")
+
 
 with st.sidebar.header("Web3Modal"):
     st.write('Wallet')
@@ -34,11 +35,13 @@ with st.sidebar.header("Web3Modal"):
         else:
             st.write('Not Connected!')
     
+
 with st.sidebar:
     select_option = st.selectbox(
         'Chain', 
         ['All chains', 'Base', 'Optimism']
     )
+
 
 
 # SUMMAY SECTION
