@@ -1,11 +1,17 @@
 import streamlit as st
 import pandas as pd
+import web3modal
+import os
 
-import streamlit as st
-import pandas as pd
+THIRD_WEB_SECRET_KEY = '3dcd8b35413c144b8f25805a1179db22'
+#print(THIRD_WEB_SECRET_KEY)
 
-csv_file = 'data/base/base_deposits.csv'
-data = pd.read_csv(csv_file)
+# IMPORT AND PREPARE DATA
+data_withdraw = pd.read_csv('data/base/basic_withdrawals.csv')
+data_deposit = pd.read_csv('data/base//basic_deposits.csv')
+data_counters = pd.read_csv('data/base//counters.csv')
+data_daily = pd.read_csv('data/base/daily_volumes.csv')
+data_forgotten = pd.read_csv('data/base/forgotten_funds.csv')
 
 st.title("Volume dashboard")
 
@@ -13,79 +19,79 @@ st.write("")
 st.divider()
 st.write("")
 
-# INPUT SECTION
-st.subheader('Select wallet or chain')
-# Create two columns for the text input boxes
-col1, col2 = st.columns(2)
-# First input box in the first column
-with col1:
-    text_input1 = st.text_input('Wallet address', '')
-    st.write("")
-    st.divider()
-    st.write("")
-# Second input box in the second column
-with col2:
+
+with st.sidebar.header("Web3Modal"):
+    st.write('Wallet')
+    btn = st.button("Confirm connection")
+    with st.sidebar.header("Web3Modal"):
+        connect_button = st.connect_component(key=THIRD_WEB_SECRET_KEY, modal_size="wide")
+        if isinstance(connect_button, dict) and connect_button["address"] != "None":
+            st.session_state['address'] = connect_button["address"]
+                # Display the address from the session state
+    if btn:
+        if 'address' in st.session_state:
+            st.write('Connected!')
+            st.write(st.session_state['address'])
+        else:
+            st.write('Not Connected!')
+    
+
+with st.sidebar:
     select_option = st.selectbox(
         'Chain', 
-        ['All chains', 'Chain 1', 'Chain 2', 'Chain 3']
+        ['All chains', 'Base', 'Optimism']
     )
-    st.write("")
-    st.divider()
-    st.write("")
+
+
 
 # SUMMAY SECTION
 st.subheader('Counters')
-col1, col2, col3, col4 = st.columns(4) # overrides
+
+col1, col2, col3 = st.columns(3) # overrides
 with col1:
-    st.write(f'**Volume in**\n\n{'fake value Ξ'}')
-    st.write("")
-    st.divider()
+    st.write(f'**Volume in**\n\n{data_daily['deposited_volume'].sum():,.2f} Ξ')
     st.write("")
 with col2:
-    st.write(f'**Volume out**\n\n{'fake value Ξ'}')
+    st.write(f'**Volume out**\n\n{data_daily['initiated_volume'].sum():,.2f} Ξ')
     st.write("")
-    st.divider()
-    st.write("")
-with col3:
-    st.write(f'**Volume to prove**\n\n{'fake value Ξ'}')
-    st.write("")
-    st.divider()
-    st.write("")
-with col4:
-    st.write(f'**Volume to withdraw**\n\n{'fake value Ξ'}')
-    st.write("")
-    st.divider()
+with col3: 
+    st.write(f'**L2 balance**\n\n{data_daily['daily_difference'].sum():,.2f} Ξ')
     st.write("")
 
+col1, col2 = st.columns(2)
+with col1:
+    st.write(f'**Volume to prove**\n\n{data_counters['sum_if_proven_null'].sum():,.2f} Ξ')
+    st.write("")
+with col2:
+    st.write(f'**Volume to withdraw**\n\n{data_counters['sum_if_finalized_null'].sum():,.2f} Ξ')
+    st.write("")
+
+
 st.write("")
-st.divider() # decide if u want this one or each one below every column
+st.divider()
 st.write("")
+
 
 # VISUALIZATION SECTION
 st.subheader('Visualization')
-col1, col2 = st.columns(2)
 
-try:
-    with col1:
-        st.write(f'**here goes piechart**\n\n{''}')
+#col1, col2 = st.columns(2)
+# First input box in the first column
+#with col1:
+#    last_7_days = pd.Timestamp.now().normalize() - pd.DateOffset(days=7) # set as 7 pliz
+#    deposit_last7days = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_7_days]
+#    st.write(f'**Bridgers last 7 days**\n\n{deposit_last7days['daily_count'].sum():,.2f}')
+#    st.write(f'**TVB last 7 days**\n\n{deposit_last7days['value'].sum():,.2f} Ξ')
+#with col2:
+#    last_year = pd.Timestamp.now().normalize() - pd.DateOffset(days=365) # set as 7 pliz
+#    deposit_lastyear = daily_aggregate_deposit[daily_aggregate_deposit['block_timestamp'] >= last_year]
+#    st.write(f'**Bridgers last year**\n\n{deposit_lastyear['daily_count'].sum():,.2f}')
+#    st.write(f'**TVB last year**\n\n{deposit_lastyear['value'].sum():,.2f} Ξ')
 
-    with col2:
-        if 'block_timestamp' in data.columns and 'msg_value' in data.columns:
-            data['block_timestamp'] = pd.to_datetime(data['block_timestamp'], errors='coerce')
+st.write("Cumulative transactions")
+st.area_chart(data_daily.set_index('date')[['cumulative_deposited','cumulative_initiated', 'cumulative_proved', 'cumulative_finalized']])
 
-            # con
-            data['msg_value_normalized'] = data['msg_value']/1e18
-
-            # Group by day and aggregate the 'msg_value' column
-            daily_aggregate = data.groupby(pd.Grouper(key='block_timestamp', freq='W')).sum().reset_index()
-
-        if 'msg_value' in data.columns and 'block_timestamp' in data.columns:
-            st.line_chart(daily_aggregate.set_index('block_timestamp')['msg_value_normalized'])
-            print(daily_aggregate.head())
-        else:
-            st.write('Columns "block_number_started" and "block_timestamp" not found in the CSV.')
-
-except FileNotFoundError:
-    st.error(f'The file {csv_file} was not found. Please make sure the file exists in the specified location.')
-
-
+st.write("Forgotten funds")
+data_forgotten = data_forgotten.sort_values('date')
+data_forgotten['cumulative_notWithdrawn'] = data_forgotten['total_not_withdrawn'].cumsum()
+st.line_chart(data_forgotten.set_index('date')[['cumulative_notWithdrawn']])
