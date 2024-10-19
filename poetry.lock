@@ -200,7 +200,7 @@ requests = "2.32.3"
 type = "git"
 url = "https://github.com/germanier/chainbase_python_sdk"
 reference = "HEAD"
-resolved_reference = "57ade1161b31f9e6d9b3c07ccf0c92068f2c43b3"
+resolved_reference = "d054b318380edb82422888eb29b1e8f02b912fbe"
 
 [[package]]
 name = "charset-normalizer"
